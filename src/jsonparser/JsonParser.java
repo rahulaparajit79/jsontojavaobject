@@ -73,6 +73,8 @@ public class JsonParser {
                     sb.append("course." + method.getName() + "(data.getBoolean(\"" + paramName + "\")); \n");
                 } else if (method.getParameterTypes()[0].equals(Date.class)) {
                     sb.append("course." + method.getName() + "(stringToJavaDate(data.optString(\"" + paramName + "\"))); \n");
+                } else if (method.getParameterTypes()[0].equals(double.class)) {
+                    sb.append("course." + method.getName() + "(data.getDouble(\"" + paramName + "\")); \n");
                 }
             }
         }
@@ -272,15 +274,10 @@ public class JsonParser {
                 String objParseMethod = "parse" + clasShortName + "Object";
                 String parseMethodName = "public ResponseObject<" + clasShortName + "> parse" + clasShortName + "Response(String jsonString){";
                 String respObj = "ResponseObject<" + clasShortName + "> response = new ResponseObject<>();";
-                String parserBody = " try {\n"
-                        + "            JSONObject responseJson = new JSONObject(jsonString);\n"
-                        + "            response.setResponseCode(responseJson.getInt(\"responseCode\"));\n"
-                        + "            response.setResponseDesc(responseJson.getString(\"responseDesc\"));\n"
-                        + "            response.setData(" + objParseMethod + "(responseJson.getJSONObject(\"data\")));\n"
-                        + "\n"
-                        + "        } catch (JSONException ex) {\n"
-                        + "            Logger.getLogger(HttpJsonResponseParser.class.getName()).log(Level.SEVERE, null, ex);\n"
-                        + "        } "
+                String parserBody = "            JSONObject responseJson = new JSONObject(jsonString);\n"
+                        + "            response.setResponseCode(responseJson.optInt(\"responseCode\"));\n"
+                        + "            response.setResponseDesc(responseJson.optString(\"responseDesc\"));\n"
+                        + "            response.setData(" + objParseMethod + "(responseJson.optJSONObject(\"data\")));\n"
                         + "return response;"
                         + "}";
                 sb.append(parseMethodName).append(respObj).append(parserBody);
@@ -289,8 +286,6 @@ public class JsonParser {
                 sb.append(parseObjectMethod);
                 String objInitString = clasShortName + " " + clasShortName.toLowerCase() + " = new " + clasShortName + "();";
                 sb.append(objInitString);
-
-                sb.append("try {");
 
                 for (Method method : methods) {
                     if (method.getName().startsWith("set")) {
@@ -301,54 +296,52 @@ public class JsonParser {
                         if (method.getParameterTypes()[0].equals(String.class)) {
                             sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.optString(\"" + paramName + "\")); \n");
                         } else if (method.getParameterTypes()[0].equals(int.class)) {
-                            sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.getInt(\"" + paramName + "\")); \n");
+                            sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.optInt(\"" + paramName + "\")); \n");
                         } else if (method.getParameterTypes()[0].equals(boolean.class)) {
-                            sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.getBoolean(\"" + paramName + "\")); \n");
+                            sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.optBoolean(\"" + paramName + "\")); \n");
                         } else if (method.getParameterTypes()[0].equals(Date.class)) {
                             sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(stringToJavaDate(jsonObject.optString(\"" + paramName + "\"))); \n");
+                        } else if (method.getParameterTypes()[0].equals(double.class)) {
+                            sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(jsonObject.optDouble(\"" + paramName + "\")); \n");
                         }
 
                         for (String cn : allClasses) {
                             if (method.getParameterTypes()[0].equals(Class.forName(cn))) {
-                                sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(parse" + cn.substring(cn.lastIndexOf(".") + 1) + "Object(jsonObject.getJSONObject(\"" + paramName + "\"))); \n");
+                                sb.append(clasShortName.toLowerCase() + "." + method.getName() + "(parse" + cn.substring(cn.lastIndexOf(".") + 1) + "Object(jsonObject.optJSONObject(\"" + paramName + "\"))); \n");
                             }
                         }
 
-                        Type[] genericParameterTypes = method.getGenericParameterTypes();
-
-                        for (Type genericParameterType : genericParameterTypes) {
-
-                            if (!genericParameterType.getTypeName().equals("java.util.List<T>")) {
-                                continue;
-                            }
-
-//                            System.out.println("Generic Type = " + genericParameterType.getTypeName());
-//                            System.out.println(method.getParameters()[0].getName());
-//                            System.out.println(method.getParameters()[0].toString());
+//                        Type[] genericParameterTypes = method.getGenericParameterTypes();
 //
-//                            Class<?>[] pType = method.getParameterTypes();
-//                            Type[] gpType = method.getGenericParameterTypes();
-//                            for (int i = 0; i < pType.length; i++) {
-//                                System.out.println( "ParameterType"+ pType[i]);
-//                                System.out.println("GenericParameterType"+ gpType[i]);
-//                            }
-//                            if (genericParameterType instanceof ParameterizedType) {
-//                                ParameterizedType aType = (ParameterizedType) genericParameterType;
+//                        for (Type genericParameterType : genericParameterTypes) {
 //
-//                                Type[] parameterArgTypes = aType.getActualTypeArguments();
-//                                for (Type parameterArgType : parameterArgTypes) {
-//                                    Class parameterArgClass = (Class) parameterArgType;
-//                                    System.out.println("parameterArgClass = " + parameterArgClass);
-//                                }
+//                            if (!genericParameterType.getTypeName().equals("java.util.List<T>")) {
+//                                continue;
 //                            }
-                        }
-
+//
+////                            System.out.println("Generic Type = " + genericParameterType.getTypeName());
+////                            System.out.println(method.getParameters()[0].getName());
+////                            System.out.println(method.getParameters()[0].toString());
+////
+////                            Class<?>[] pType = method.getParameterTypes();
+////                            Type[] gpType = method.getGenericParameterTypes();
+////                            for (int i = 0; i < pType.length; i++) {
+////                                System.out.println( "ParameterType"+ pType[i]);
+////                                System.out.println("GenericParameterType"+ gpType[i]);
+////                            }
+////                            if (genericParameterType instanceof ParameterizedType) {
+////                                ParameterizedType aType = (ParameterizedType) genericParameterType;
+////
+////                                Type[] parameterArgTypes = aType.getActualTypeArguments();
+////                                for (Type parameterArgType : parameterArgTypes) {
+////                                    Class parameterArgClass = (Class) parameterArgType;
+////                                    System.out.println("parameterArgClass = " + parameterArgClass);
+////                                }
+////                            }
+//                        }
                     }
                 }
-                sb.append("return " + clasShortName.toLowerCase() + ";");
-                sb.append(" } catch (JSONException ex) {\n"
-                        + "            Logger.getLogger(HttpJsonResponseParser.class.getName()).log(Level.SEVERE, null, ex);\n"
-                        + "        }");
+
                 sb.append("return " + clasShortName.toLowerCase() + ";");
                 sb.append("}");
                 sb.append("\n");
